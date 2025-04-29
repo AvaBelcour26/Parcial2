@@ -6,13 +6,6 @@ import com.example.parcialDos.modelo.Vehiculo;
 import com.example.parcialDos.repositorio.TipoVehiculoRepositorio;
 import com.example.parcialDos.repositorio.UsuarioRepositorio;
 import com.example.parcialDos.servicio.VehiculoServicio;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -27,7 +20,6 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/vehiculo")
-@Tag(name = "Gestión de Vehículos", description = "Controlador para la gestión de vehículos en el parqueadero mediante vistas Thymeleaf")
 public class VehiculoController {
 
     private final VehiculoServicio vehiculoServicio;
@@ -43,12 +35,6 @@ public class VehiculoController {
     }
 
     @GetMapping("/home")
-    @Operation(summary = "Vista principal de vehículos",
-            description = "Muestra la página principal con la lista de vehículos actualmente en el parqueadero")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Vista de vehículos cargada correctamente"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado")
-    })
     public String home(Model model) {
         List<Vehiculo> vehiculos = vehiculoServicio.listarVehiculosEnParqueadero();
         model.addAttribute("vehiculos", vehiculos);
@@ -68,12 +54,6 @@ public class VehiculoController {
 
     @GetMapping("/formulario")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Formulario de registro de vehículo",
-            description = "Muestra el formulario para registrar la entrada de un nuevo vehículo (solo administradores)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Formulario cargado correctamente"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores")
-    })
     public String mostrarFormulario(Model model) {
         model.addAttribute("vehiculo", new Vehiculo());
         model.addAttribute("tiposVehiculo", tipoVehiculoRepositorio.findAll());
@@ -82,20 +62,10 @@ public class VehiculoController {
 
     @PostMapping("/guardar")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Guardar nuevo vehículo",
-            description = "Procesa el formulario para registrar la entrada de un nuevo vehículo")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "302", description = "Vehículo registrado correctamente, redirección a home"),
-            @ApiResponse(responseCode = "400", description = "Datos de formulario inválidos"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores")
-    })
-    public String guardar(
-            @Parameter(description = "Datos del vehículo a registrar",
-                    schema = @Schema(implementation = Vehiculo.class))
-            @Valid @ModelAttribute("vehiculo") Vehiculo vehiculo,
-            BindingResult result,
-            Model model,
-            RedirectAttributes flash) {
+    public String guardar(@Valid @ModelAttribute("vehiculo") Vehiculo vehiculo,
+                          BindingResult result,
+                          Model model,
+                          RedirectAttributes flash) {
         if (result.hasErrors()) {
             model.addAttribute("tiposVehiculo", tipoVehiculoRepositorio.findAll());
             return "vehiculo/formulario";
@@ -118,18 +88,7 @@ public class VehiculoController {
 
     @GetMapping("/editar/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ACOMODADOR')")
-    @Operation(summary = "Formulario de edición de ubicación",
-            description = "Muestra el formulario para editar la ubicación de un vehículo (administradores y acomodadores)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Formulario de edición cargado correctamente"),
-            @ApiResponse(responseCode = "302", description = "Vehículo no encontrado o ya salió, redirección a home"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores y acomodadores")
-    })
-    public String mostrarFormularioEditar(
-            @Parameter(description = "ID del vehículo a editar")
-            @PathVariable Long id,
-            Model model,
-            RedirectAttributes flash) {
+    public String mostrarFormularioEditar(@PathVariable Long id, Model model, RedirectAttributes flash) {
         Vehiculo vehiculo = vehiculoServicio.buscarPorId(id)
                 .orElse(null);
 
@@ -145,18 +104,9 @@ public class VehiculoController {
 
     @PostMapping("/actualizar/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ACOMODADOR')")
-    @Operation(summary = "Actualizar ubicación",
-            description = "Procesa el formulario para actualizar la ubicación de un vehículo")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "302", description = "Ubicación actualizada correctamente, redirección a home"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores y acomodadores")
-    })
-    public String actualizar(
-            @Parameter(description = "ID del vehículo a actualizar")
-            @PathVariable Long id,
-            @Parameter(description = "Nueva ubicación del vehículo")
-            @RequestParam String ubicacion,
-            RedirectAttributes flash) {
+    public String actualizar(@PathVariable Long id,
+                             @RequestParam String ubicacion,
+                             RedirectAttributes flash) {
         try {
             vehiculoServicio.actualizarUbicacion(id, ubicacion);
             flash.addFlashAttribute("success", "Ubicación actualizada correctamente");
@@ -169,16 +119,7 @@ public class VehiculoController {
 
     @GetMapping("/registrarSalida/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Registrar salida de vehículo",
-            description = "Registra la salida de un vehículo del parqueadero (solo administradores)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "302", description = "Salida registrada correctamente, redirección a home"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores")
-    })
-    public String registrarSalida(
-            @Parameter(description = "ID del vehículo a registrar salida")
-            @PathVariable Long id,
-            RedirectAttributes flash) {
+    public String registrarSalida(@PathVariable Long id, RedirectAttributes flash) {
         try {
             vehiculoServicio.registrarSalida(id);
             flash.addFlashAttribute("success", "Salida registrada correctamente");
@@ -191,18 +132,7 @@ public class VehiculoController {
 
     @GetMapping("/eliminar/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Confirmar eliminación",
-            description = "Muestra la página de confirmación para eliminar un vehículo (solo administradores)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Página de confirmación cargada correctamente"),
-            @ApiResponse(responseCode = "302", description = "Vehículo no encontrado, redirección a home"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores")
-    })
-    public String confirmarEliminar(
-            @Parameter(description = "ID del vehículo a eliminar")
-            @PathVariable Long id,
-            Model model,
-            RedirectAttributes flash) {
+    public String confirmarEliminar(@PathVariable Long id, Model model, RedirectAttributes flash) {
         Vehiculo vehiculo = vehiculoServicio.buscarPorId(id)
                 .orElse(null);
 
@@ -217,16 +147,7 @@ public class VehiculoController {
 
     @PostMapping("/eliminar/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar vehículo",
-            description = "Procesa la eliminación de un vehículo del sistema (solo administradores)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "302", description = "Vehículo eliminado correctamente, redirección a home"),
-            @ApiResponse(responseCode = "403", description = "Acceso denegado - Solo administradores")
-    })
-    public String eliminar(
-            @Parameter(description = "ID del vehículo a eliminar definitivamente")
-            @PathVariable Long id,
-            RedirectAttributes flash) {
+    public String eliminar(@PathVariable Long id, RedirectAttributes flash) {
         try {
             vehiculoServicio.eliminar(id);
             flash.addFlashAttribute("success", "Vehículo eliminado correctamente");
