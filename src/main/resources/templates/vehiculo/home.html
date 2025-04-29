@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Parqueadero</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            margin-bottom: 30px;
+        }
+        .actions-column {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Sistema de Gestión de Parqueadero</h2>
+            <p>Vehículos actualmente en el parqueadero</p>
+        </div>
+        <div class="text-end">
+            <div class="mb-2">
+                <span class="fw-bold">Usuario: </span>
+                <span sec:authentication="name"></span>
+                <span class="badge bg-secondary ms-2" sec:authentication="principal.authorities"></span>
+            </div>
+            <a th:href="@{/logout}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensajes de alerta -->
+    <div th:if="${success != null}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${error != null}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Botón para registrar nuevo vehículo (solo para administradores) -->
+    <div sec:authorize="hasRole('ADMINISTRADOR')" class="mb-3">
+        <a th:href="@{/vehiculo/formulario}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Registrar Entrada
+        </a>
+    </div>
+
+    <!-- Mensaje para usuarios cliente -->
+    <div sec:authorize="hasRole('CLIENTE')" class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Como cliente, puedes visualizar la información de los vehículos actualmente en el parqueadero.
+    </div>
+
+    <!-- Tabla de vehículos -->
+    <div class="card">
+        <div class="card-body">
+            <div th:if="${vehiculos.isEmpty()}" class="alert alert-info">
+                No hay vehículos en el parqueadero actualmente.
+            </div>
+
+            <div th:if="${!vehiculos.isEmpty()}" class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>Placa</th>
+                        <th>Tipo</th>
+                        <th>Hora de Entrada</th>
+                        <th>Ubicación</th>
+                        <th sec:authorize="hasAnyRole('ADMINISTRADOR', 'ACOMODADOR')" class="actions-column">Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="vehiculo : ${vehiculos}">
+                        <td th:text="${vehiculo.placa}"></td>
+                        <td th:text="${vehiculo.tipoVehiculo.nombre}"></td>
+                        <td th:text="${#temporals.format(vehiculo.horaEntrada, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${vehiculo.ubicacion}"></td>
+                        <td sec:authorize="hasAnyRole('ADMINISTRADOR', 'ACOMODADOR')">
+                            <!-- Acciones para administrador -->
+                            <div sec:authorize="hasRole('ADMINISTRADOR')" class="btn-group">
+                                <a th:href="@{/vehiculo/registrarSalida/{id}(id=${vehiculo.id})}"
+                                   class="btn btn-success btn-sm"
+                                   title="Registrar Salida"
+                                   onclick="return confirm('¿Desea registrar la salida de este vehículo?')">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                </a>
+                                <a th:href="@{/vehiculo/editar/{id}(id=${vehiculo.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   title="Editar Ubicación">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a th:href="@{/vehiculo/eliminar/{id}(id=${vehiculo.id})}"
+                                   class="btn btn-danger btn-sm"
+                                   title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+
+                            <!-- Acciones para acomodador -->
+                            <div sec:authorize="hasRole('ACOMODADOR')" class="btn-group">
+                                <a th:href="@{/vehiculo/editar/{id}(id=${vehiculo.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   title="Actualizar Ubicación">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
